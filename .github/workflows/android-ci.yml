@@ -20,11 +20,28 @@ jobs:
           gradle-version: '8.9'
       - name: Validate backend JavaScript
         run: node --check functions/index.js
-      - name: Build installable debug APKs
-        run: gradle assembleUserDebug assembleAdminDebug --stacktrace
+      - name: Build debug and unsigned release APKs
+        run: gradle assembleUserDebug assembleAdminDebug assembleUserRelease assembleAdminRelease --stacktrace
+      - name: Prepare production signing inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          BT="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
+          USER_APK="$(find app/build/outputs/apk/user/release -name '*-unsigned.apk' -print -quit)"
+          ADMIN_APK="$(find app/build/outputs/apk/admin/release -name '*-unsigned.apk' -print -quit)"
+          test -f "$USER_APK"
+          test -f "$ADMIN_APK"
+          "$BT/zipalign" -p -f 4 "$USER_APK" dist/Kaido_Follow_User_1.0.0_unsigned.apk
+          "$BT/zipalign" -p -f 4 "$ADMIN_APK" dist/Kaido_Follow_Admin_1.0.0_unsigned.apk
+          cp "$BT/lib/apksigner.jar" dist/apksigner.jar
       - uses: actions/upload-artifact@v4
         with:
           name: kaido-follow-debug-apks
           path: |
             app/build/outputs/apk/user/debug/*.apk
             app/build/outputs/apk/admin/debug/*.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kaido-follow-unsigned-release-and-signer
+          path: dist/*
