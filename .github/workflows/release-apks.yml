@@ -1,0 +1,38 @@
+name: Signed Release APKs
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Restore release keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.KAIDO_KEYSTORE_B64 }}
+        run: |
+          test -n "$KEYSTORE_B64" || (echo "Missing KAIDO_KEYSTORE_B64" && exit 1)
+          echo "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/kaido-release.jks"
+      - name: Build signed user and admin APKs
+        env:
+          KAIDO_KEYSTORE_PATH: ${{ runner.temp }}/kaido-release.jks
+          KAIDO_KEY_ALIAS: ${{ secrets.KAIDO_KEY_ALIAS }}
+          KAIDO_STORE_PASSWORD: ${{ secrets.KAIDO_STORE_PASSWORD }}
+          KAIDO_KEY_PASSWORD: ${{ secrets.KAIDO_KEY_PASSWORD }}
+        run: gradle assembleUserRelease assembleAdminRelease --stacktrace
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kaido-follow-signed-release-apks
+          path: |
+            app/build/outputs/apk/user/release/*.apk
+            app/build/outputs/apk/admin/release/*.apk

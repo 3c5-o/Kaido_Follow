@@ -1,0 +1,62 @@
+plugins { id 'com.android.application' }
+
+def ksPath = System.getenv('KAIDO_KEYSTORE_PATH')
+def ksAlias = System.getenv('KAIDO_KEY_ALIAS')
+def ksStorePass = System.getenv('KAIDO_STORE_PASSWORD')
+def ksKeyPass = System.getenv('KAIDO_KEY_PASSWORD')
+
+android {
+    namespace 'com.kaido.follow'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.kaido.follow'
+        minSdk 24
+        targetSdk 35
+        versionCode 1
+        versionName '1.0.0'
+    }
+
+    flavorDimensions += 'edition'
+    productFlavors {
+        user {
+            dimension 'edition'
+            applicationId 'com.kaido.follow'
+            resValue 'string', 'app_name', 'Kaido Follow'
+            buildConfigField 'String', 'START_PAGE', '"user/index.html"'
+        }
+        admin {
+            dimension 'edition'
+            applicationId 'com.kaido.follow.admin'
+            resValue 'string', 'app_name', 'Kaido Follow Admin'
+            buildConfigField 'String', 'START_PAGE', '"admin/index.html"'
+        }
+    }
+
+    signingConfigs {
+        if (ksPath && ksAlias && ksStorePass && ksKeyPass) {
+            release {
+                storeFile file(ksPath)
+                storePassword ksStorePass
+                keyAlias ksAlias
+                keyPassword ksKeyPass
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+            if (ksPath && ksAlias && ksStorePass && ksKeyPass) signingConfig signingConfigs.release
+        }
+        debug { applicationIdSuffix '.debug' }
+    }
+
+    buildFeatures { buildConfig true }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.12.1'
+}

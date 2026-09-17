@@ -1,0 +1,42 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn(){ return request.auth != null; }
+    function adminUser(){ return signedIn() && request.auth.token.admin == true; }
+    function owner(uid){ return signedIn() && request.auth.uid == uid; }
+
+    match /users/{uid} {
+      allow read: if owner(uid) || adminUser();
+      allow create: if owner(uid)
+        && request.resource.data.balance == 0
+        && request.resource.data.spent == 0
+        && request.resource.data.banned == false;
+      allow update: if adminUser() || (owner(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name','username','photoURL','updatedAt']));
+      allow delete: if adminUser();
+    }
+    match /categories/{id} { allow read: if signedIn(); allow write: if adminUser(); }
+    match /services/{id} { allow read: if signedIn(); allow write: if adminUser(); }
+    match /providers/{id} { allow read, write: if adminUser(); }
+    match /providerSecrets/{id} { allow read, write: if false; }
+    match /orders/{id} { allow read: if signedIn() && (resource.data.userId == request.auth.uid || adminUser()); allow write: if false; }
+    match /walletTransactions/{id} { allow read: if signedIn() && (resource.data.userId == request.auth.uid || adminUser()); allow write: if false; }
+    match /coupons/{id} { allow read: if adminUser(); allow write: if adminUser(); }
+    match /couponRedemptions/{id} { allow read: if adminUser(); allow write: if false; }
+    match /notifications/{id} {
+      allow read: if signedIn() && (resource.data.userId == request.auth.uid || adminUser());
+      allow update: if signedIn() && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow create, delete: if adminUser();
+    }
+    match /chats/{uid} {
+      allow read: if owner(uid) || adminUser();
+      allow create, update: if owner(uid) || adminUser();
+      allow delete: if adminUser();
+      match /messages/{mid} { allow read, create: if owner(uid) || adminUser(); allow update, delete: if adminUser(); }
+    }
+    match /settings/{id} { allow read: if signedIn(); allow write: if adminUser(); }
+    match /admins/{id} { allow read: if adminUser(); allow write: if false; }
+    match /adminLogs/{id} { allow read: if adminUser(); allow write: if false; }
+  }
+}
