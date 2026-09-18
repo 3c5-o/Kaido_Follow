@@ -13,6 +13,8 @@ jobs:
           node-version: '20'
       - run: npm install --prefix functions
       - run: npm install -g firebase-tools
+      - name: Validate backend
+        run: node --check functions/index.js
       - name: Write Firebase service account
         env:
           FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KAIDO_FOLLOW }}
@@ -20,6 +22,5 @@ jobs:
           test -n "$FIREBASE_SA" || (echo "Missing FIREBASE_SERVICE_ACCOUNT_KAIDO_FOLLOW" && exit 1)
           echo "$FIREBASE_SA" > "$RUNNER_TEMP/firebase-sa.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-sa.json" >> "$GITHUB_ENV"
-      - run: firebase deploy --project kaido-follow-508df --only firestore:rules,firestore:indexes,functions --non-interactive
-        env:
-          OWNER_EMAIL: Kaido@gmail.com
+      - name: Deploy rules, indexes and functions
+        run: firebase deploy --project kaido-follow-b597e --only firestore:rules,firestore:indexes,functions --non-interactive
