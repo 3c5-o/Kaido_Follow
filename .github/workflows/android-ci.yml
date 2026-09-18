@@ -1,7 +1,7 @@
 name: Android CI
 on:
   push:
-    branches: [main]
+    branches: [main, 'v2/**']
   pull_request:
     branches: [main]
 permissions:
@@ -20,9 +20,11 @@ jobs:
           gradle-version: '8.9'
       - name: Validate backend JavaScript
         run: node --check functions/index.js
+      - name: Android lint
+        run: gradle lintUserDebug lintAdminDebug --stacktrace
       - name: Build debug and unsigned release APKs
         run: gradle assembleUserDebug assembleAdminDebug assembleUserRelease assembleAdminRelease --stacktrace
-      - name: Prepare production signing inputs
+      - name: Prepare aligned release APKs and signer
         shell: bash
         run: |
           set -euo pipefail
@@ -32,16 +34,18 @@ jobs:
           ADMIN_APK="$(find app/build/outputs/apk/admin/release -name '*-unsigned.apk' -print -quit)"
           test -f "$USER_APK"
           test -f "$ADMIN_APK"
-          "$BT/zipalign" -p -f 4 "$USER_APK" dist/Kaido_Follow_User_1.0.0_unsigned.apk
-          "$BT/zipalign" -p -f 4 "$ADMIN_APK" dist/Kaido_Follow_Admin_1.0.0_unsigned.apk
+          "$BT/zipalign" -c -p 4 "$USER_APK" || "$BT/zipalign" -p -f 4 "$USER_APK" dist/Kaido_Follow_User_2.0.0_unsigned.apk
+          "$BT/zipalign" -c -p 4 "$ADMIN_APK" || "$BT/zipalign" -p -f 4 "$ADMIN_APK" dist/Kaido_Follow_Admin_2.0.0_unsigned.apk
+          if [ ! -f dist/Kaido_Follow_User_2.0.0_unsigned.apk ]; then cp "$USER_APK" dist/Kaido_Follow_User_2.0.0_unsigned.apk; fi
+          if [ ! -f dist/Kaido_Follow_Admin_2.0.0_unsigned.apk ]; then cp "$ADMIN_APK" dist/Kaido_Follow_Admin_2.0.0_unsigned.apk; fi
           cp "$BT/lib/apksigner.jar" dist/apksigner.jar
       - uses: actions/upload-artifact@v4
         with:
-          name: kaido-follow-debug-apks
+          name: kaido-follow-2-debug-apks
           path: |
             app/build/outputs/apk/user/debug/*.apk
             app/build/outputs/apk/admin/debug/*.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: kaido-follow-unsigned-release-and-signer
+          name: kaido-follow-2-unsigned-release-and-signer
           path: dist/*
