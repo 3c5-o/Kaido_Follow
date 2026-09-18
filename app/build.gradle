@@ -10,26 +10,27 @@ android {
     compileSdk 35
 
     defaultConfig {
-        applicationId 'com.kaido.follow'
-        minSdk 24
+        minSdk 23
         targetSdk 35
-        versionCode 1
-        versionName '1.0.0'
+        versionCode 20000
+        versionName '2.0.0'
     }
 
     flavorDimensions += 'edition'
     productFlavors {
         user {
             dimension 'edition'
-            applicationId 'com.kaido.follow'
+            applicationId 'com.kaidofollow.user'
             resValue 'string', 'app_name', 'Kaido Follow'
             buildConfigField 'String', 'START_PAGE', '"user/index.html"'
+            buildConfigField 'String', 'EDITION', '"user"'
         }
         admin {
             dimension 'edition'
-            applicationId 'com.kaido.follow.admin'
+            applicationId 'com.kaidofollow.admin'
             resValue 'string', 'app_name', 'Kaido Follow Admin'
             buildConfigField 'String', 'START_PAGE', '"admin/index.html"'
+            buildConfigField 'String', 'EDITION', '"admin"'
         }
     }
 
@@ -40,6 +41,10 @@ android {
                 storePassword ksStorePass
                 keyAlias ksAlias
                 keyPassword ksKeyPass
+                enableV1Signing true
+                enableV2Signing true
+                enableV3Signing true
+                enableV4Signing false
             }
         }
     }
@@ -48,13 +53,26 @@ android {
         release {
             minifyEnabled false
             shrinkResources false
-            if (ksPath && ksAlias && ksStorePass && ksKeyPass) signingConfig signingConfigs.release
+            if (ksPath && ksAlias && ksStorePass && ksKeyPass) {
+                signingConfig signingConfigs.release
+            }
         }
-        debug { applicationIdSuffix '.debug' }
+        debug {
+            applicationIdSuffix '.debug'
+            versionNameSuffix '-debug'
+        }
     }
 
     buildFeatures { buildConfig true }
-    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError true
+        checkReleaseBuilds false
+    }
 }
 
 dependencies {
