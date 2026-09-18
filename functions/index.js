@@ -466,12 +466,15 @@ app.post('/wallet/redeem-coupon', async (req, res) => {
     let amount = 0;
 
     await db.runTransaction(async tx => {
-      const [cSnap, uSnap, rSnap] = await Promise.all([tx.get(couponRef), tx.get(userRef), tx.get(redemptionRef)]);
+      const settingsRef = db.doc('settings/general');
+      const [cSnap, uSnap, rSnap, settingsSnap] = await Promise.all([
+        tx.get(couponRef), tx.get(userRef), tx.get(redemptionRef), tx.get(settingsRef)
+      ]);
       if (!cSnap.exists) throw httpError('INVALID_COUPON');
       if (rSnap.exists) throw httpError('COUPON_ALREADY_USED');
       if (!uSnap.exists) throw httpError('USER_NOT_FOUND', 404);
 
-      const c = cSnap.data(), u = uSnap.data(), now = Date.now();
+      const c = cSnap.data(), u = uSnap.data(), settings = settingsSnap.exists ? settingsSnap.data() : {}, now = Date.now();
       if (c.active === false) throw httpError('COUPON_DISABLED');
       if (c.startsAt && c.startsAt.toMillis() > now) throw httpError('COUPON_NOT_STARTED');
       if (c.expiresAt && c.expiresAt.toMillis() < now) throw httpError('COUPON_EXPIRED');
@@ -488,8 +491,6 @@ app.post('/wallet/redeem-coupon', async (req, res) => {
       });
 
       if (u.invitedBy) {
-        const settingsSnap = await tx.get(db.doc('settings/general'));
-        const settings = settingsSnap.exists ? settingsSnap.data() : {};
         const pct = Math.max(0, Math.min(100, Number(c.affiliatePercent ?? settings.affiliatePercent ?? 5)));
         const commission = money(amount * pct / 100);
         if (commission > 0) {
