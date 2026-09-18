@@ -1,1 +1,5 @@
-{ "projects": { "default": "kaido-follow-508df" } }
+{
+  "projects": {
+    "default": "kaido-follow-b597e"
+  }
+}
