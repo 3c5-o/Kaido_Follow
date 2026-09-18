@@ -453,6 +453,57 @@ app.post('/order/sync', async (req, res) => {
   } catch (e) { fail(res, e); }
 });
 
+app.post('/order/refill', async (req, res) => {
+  try {
+    const t = await auth(req, false, true);
+    await rateLimit(t.uid, 'order-refill', 8, 300);
+    const orderId = cleanText(req.body?.orderId, 180);
+    const ref = db.doc(`orders/${orderId}`);
+    const snap = await ref.get();
+    if (!snap.exists || snap.data().userId !== t.uid) throw httpError('ORDER_NOT_FOUND', 404);
+    const o = snap.data();
+    const service = await db.doc(`services/${o.serviceId}`).get();
+    if (!service.exists || service.data().supportsRefill !== true) throw httpError('REFILL_NOT_SUPPORTED');
+    if (!o.providerOrderId) throw httpError('PROVIDER_ORDER_MISSING');
+    const p = await providerSecret(o.providerId);
+    const data = await providerCall(p, { action: 'refill', order: String(o.providerOrderId) });
+    await ref.update({
+      refillRequested: true,
+      refillId: String(data.refill ?? data.order ?? ''),
+      refillStatus: cleanText(data.status || 'PENDING', 80),
+      refillRequestedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp()
+    });
+    await notify(t.uid, 'تم إرسال طلب إعادة التعبئة', 'سنتابع حالة إعادة التعبئة تلقائياً.', 'refill', { orderId });
+    res.json({ ok: true, refill: data.refill ?? data.order ?? null });
+  } catch (e) { fail(res, e); }
+});
+
+app.post('/order/cancel', async (req, res) => {
+  try {
+    const t = await auth(req, false, true);
+    await rateLimit(t.uid, 'order-cancel', 8, 300);
+    const orderId = cleanText(req.body?.orderId, 180);
+    const ref = db.doc(`orders/${orderId}`);
+    const snap = await ref.get();
+    if (!snap.exists || snap.data().userId !== t.uid) throw httpError('ORDER_NOT_FOUND', 404);
+    const o = snap.data();
+    const service = await db.doc(`services/${o.serviceId}`).get();
+    if (!service.exists || service.data().supportsCancel !== true) throw httpError('CANCEL_NOT_SUPPORTED');
+    if (!o.providerOrderId || TERMINAL_STATUSES.has(String(o.status || '').toUpperCase())) throw httpError('ORDER_NOT_CANCELABLE');
+    const p = await providerSecret(o.providerId);
+    const data = await providerCall(p, { action: 'cancel', order: String(o.providerOrderId) });
+    await ref.update({
+      cancelRequested: true,
+      cancelResponse: cleanText(JSON.stringify(data), 500),
+      cancelRequestedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp()
+    });
+    await notify(t.uid, 'تم إرسال طلب الإلغاء', 'تم إرسال طلب الإلغاء إلى المزود. سيظهر أي استرجاع بعد تأكيد الإلغاء.', 'cancel', { orderId });
+    res.json({ ok: true });
+  } catch (e) { fail(res, e); }
+});
+
 app.post('/wallet/redeem-coupon', async (req, res) => {
   try {
     const t = await auth(req, false, true);
