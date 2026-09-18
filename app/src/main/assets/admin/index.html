@@ -1,4 +1,192 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Kaido Admin</title><link rel="stylesheet" href="../common.css"><style>:root{--bg:#0d0716;--s:#171024;--s2:#251633;--b:#3c2850;--p:#8b5cf6}.app{max-width:900px}.nav{width:min(900px,100%)}</style></head><body><div id="toast" class="toast"></div><div id="loader" class="loader"><div class="spin"></div></div><section id="auth" class="login"><div class="loginbox"><h2>KAIDO ADMIN</h2><p class="muted">لوحة الإدارة الآمنة</p><input id="ae" class="input" placeholder="البريد الإداري"><input id="ap" class="input" type="password" placeholder="كلمة المرور"><button class="btn primary" onclick="adminLogin()">دخول</button></div></section>
-<div id="app" class="app hide"><header class="top"><div><b>KAIDO ADMIN</b><div id="identity" class="muted"></div></div><button class="btn danger" onclick="logout()">خروج</button></header><section id="p-dashboard" class="page active"><div class="title">لوحة القيادة</div><div class="grid"><div class="card">المستخدمون <b id="su">0</b></div><div class="card">الطلبات <b id="so">0</b></div><div class="card">المبيعات <b id="ss">$0</b></div><div class="card">الربح <b id="sp">$0</b></div></div><div class="card row"><span id="health">Backend</span><button class="btn" onclick="health()">فحص</button><button class="btn primary" onclick="syncAll()">مزامنة</button></div></section>
-<section id="p-orders" class="page"><div class="title">الطلبات</div><input id="os" class="input" placeholder="بحث" oninput="renderOrders()"><div id="orders" class="list"></div></section><section id="p-services" class="page"><div class="row title"><span>الخدمات</span><button class="btn primary" onclick="serviceForm()">إضافة</button></div><div id="services" class="list"></div></section><section id="p-users" class="page"><div class="title">المستخدمون</div><input id="us" class="input" placeholder="بحث" oninput="renderUsers()"><div id="users" class="list"></div></section><section id="p-more" class="page"><div class="title">الإدارة</div><div class="grid"><button class="btn" onclick="go('cats')">الأقسام</button><button class="btn" onclick="go('providers')">المزودون</button><button class="btn" onclick="go('coupons')">الكوبونات</button><button class="btn" onclick="go('support')">الدعم</button><button class="btn" onclick="go('logs')">السجل</button><button class="btn" onclick="go('settings')">الإعدادات</button></div></section><section id="p-cats" class="page"><div class="row title"><span>الأقسام</span><button class="btn primary" onclick="catForm()">إضافة</button></div><div id="cats" class="list"></div></section><section id="p-providers" class="page"><div class="row title"><span>المزودون</span><button class="btn primary" onclick="providerForm()">إضافة</button></div><div id="providers" class="list"></div></section><section id="p-coupons" class="page"><div class="row title"><span>الكوبونات</span><button class="btn primary" onclick="couponForm()">إنشاء</button></div><div id="coupons" class="list"></div></section><section id="p-support" class="page"><div class="title">الدعم</div><div id="chats" class="list"></div><div id="chatbox" class="hide"><div id="chat" class="card chat"></div><div class="row"><input id="reply" class="input"><button class="btn primary" onclick="sendReply()">إرسال</button><button class="btn" onclick="closeTicket()">إغلاق</button></div></div></section><section id="p-logs" class="page"><div class="title">سجل النشاط</div><div id="logs" class="list"></div></section><section id="p-settings" class="page"><div class="card"><input id="aff" class="input" type="number" placeholder="نسبة الإحالة"><textarea id="ann" class="input" placeholder="إعلان"></textarea><button class="btn primary" onclick="saveSettings()">حفظ</button></div></section>
-<nav class="nav"><button class="active" data-p="dashboard" onclick="go('dashboard')">الرئيسية</button><button data-p="orders" onclick="go('orders')">الطلبات</button><button data-p="services" onclick="go('services')">الخدمات</button><button data-p="users" onclick="go('users')">المستخدمون</button><button data-p="more" onclick="go('more')">المزيد</button></nav></div><div id="formM" class="modal"><div class="sheet"><div class="row"><h3 id="formTitle"></h3><button class="btn" onclick="closeM('formM')">إغلاق</button></div><div id="formBody"></div></div></div><script type="module" src="./app.js"></script></body></html>
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0D0716">
+  <title>Kaido Follow Admin</title>
+  <link rel="stylesheet" href="../common.css">
+  <style>
+    :root{--bg:#0d0716;--bg2:#130b20;--surface:#171024;--surface2:#251633;--surface3:#2e1d40;--border:#3b2950;--primary:#8b5cf6;--primary2:#ec4899}
+  </style>
+</head>
+<body>
+<div id="offline" class="offline hide">لا يوجد اتصال بالإنترنت</div>
+<div id="toast" class="toast"></div>
+<div id="loader" class="loader"><div class="spin"></div></div>
+
+<section id="auth" class="login admin-login">
+  <div class="loginbox">
+    <div class="login-logo admin">
+      <svg viewBox="0 0 64 64" width="45" height="45" fill="none"><path d="M32 6 52 14v15c0 14-8 24-20 30C20 53 12 43 12 29V14L32 6Z" fill="#fff" opacity=".96"/><path d="M24 31h16M32 23v16" stroke="#8B5CF6" stroke-width="5" stroke-linecap="round"/></svg>
+    </div>
+    <h1>KAIDO ADMIN</h1>
+    <p class="subtitle" style="text-align:center">لوحة الإدارة الخاصة بمالك Kaido Follow</p>
+    <div class="notice"><b>حساب الإدارة الوحيد</b><div style="direction:ltr;text-align:left">kaidofollow@gmail.com</div></div>
+    <div class="field"><label>كلمة المرور</label><input id="ap" class="input" type="password" autocomplete="current-password" placeholder="كلمة مرور حساب الإدارة"></div>
+    <button class="btn primary" style="width:100%" onclick="adminLogin()">تسجيل الدخول</button>
+  </div>
+</section>
+
+<div id="app" class="app admin-shell hide">
+  <header class="top">
+    <div class="brand-wrap">
+      <div class="brand-mark admin">
+        <svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 3 20 6v6c0 5-3 8-8 10-5-2-8-5-8-10V6l8-3Z"/><path d="M8 12h8M12 8v8"/></svg>
+      </div>
+      <div><div class="brand">KAIDO ADMIN</div><div id="identity" class="muted">مالك النظام</div></div>
+    </div>
+    <button class="btn danger" onclick="logout()">خروج</button>
+  </header>
+
+  <section id="p-dashboard" class="page active">
+    <div class="row title"><span>لوحة القيادة</span><button class="btn ghost" onclick="refreshDashboard()">تحديث</button></div>
+    <div class="dashboard-grid grid">
+      <div class="metric"><span class="muted">المستخدمون</span><b id="su">0</b></div>
+      <div class="metric"><span class="muted">الطلبات</span><b id="so">0</b></div>
+      <div class="metric"><span class="muted">المبيعات</span><b id="ss">$0</b></div>
+      <div class="metric"><span class="muted">الربح التقديري</span><b id="sp">$0</b></div>
+    </div>
+    <div class="grid" style="margin-top:10px">
+      <div class="metric"><span class="muted">الاسترجاعات</span><b id="sr">$0</b></div>
+      <div class="metric"><span class="muted">طلبات تحتاج مراجعة</span><b id="reviewCount">0</b></div>
+    </div>
+    <div class="card">
+      <div class="row"><b>حالة النظام</b><span id="health" class="badge">Backend</span></div>
+      <div class="divider"></div>
+      <div class="row start wrap">
+        <button class="btn primary" onclick="syncAll()">مزامنة الطلبات</button>
+        <button class="btn ghost" onclick="health()">فحص Backend</button>
+      </div>
+    </div>
+    <div class="title">آخر الطلبات</div>
+    <div id="dashOrders" class="list"></div>
+  </section>
+
+  <section id="p-orders" class="page">
+    <div class="title">إدارة الطلبات</div>
+    <div class="searchbox">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="os" class="input" placeholder="رقم الطلب، المستخدم أو الخدمة" oninput="renderOrders()">
+    </div>
+    <div id="adminOrderTabs" class="tabs">
+      <button class="tab active" onclick="setAdminOrderFilter('ALL',this)">الكل</button>
+      <button class="tab" onclick="setAdminOrderFilter('ACTIVE',this)">نشط</button>
+      <button class="tab" onclick="setAdminOrderFilter('REVIEW',this)">مراجعة</button>
+      <button class="tab" onclick="setAdminOrderFilter('DONE',this)">منتهي</button>
+    </div>
+    <div id="orders" class="list"></div>
+    <button id="moreOrders" class="btn ghost" style="width:100%" onclick="loadMoreOrders()">تحميل المزيد</button>
+  </section>
+
+  <section id="p-services" class="page">
+    <div class="row title"><span>الخدمات</span><div class="row start"><button class="btn ghost" onclick="openImport()">استيراد</button><button class="btn primary" onclick="serviceForm()">إضافة</button></div></div>
+    <input id="serviceSearch" class="input" placeholder="بحث بالخدمات" oninput="renderServices()">
+    <div id="services" class="list"></div>
+  </section>
+
+  <section id="p-users" class="page">
+    <div class="title">المستخدمون</div>
+    <input id="us" class="input" placeholder="الاسم، البريد أو اسم المستخدم" oninput="renderUsers()">
+    <div id="users" class="list"></div>
+    <button id="moreUsers" class="btn ghost" style="width:100%" onclick="loadMoreUsers()">تحميل المزيد</button>
+  </section>
+
+  <section id="p-more" class="page">
+    <div class="title">الإدارة</div>
+    <div class="grid">
+      <button class="card click" onclick="go('cats')"><b>الأقسام</b><div class="muted">ترتيب وتصنيف</div></button>
+      <button class="card click" onclick="go('providers')"><b>المزودون</b><div class="muted">API والصحة</div></button>
+      <button class="card click" onclick="go('coupons')"><b>الكوبونات</b><div class="muted">الشحن والترويج</div></button>
+      <button class="card click" onclick="go('payments')"><b>طرق الدفع</b><div class="muted">شحن المحفظة</div></button>
+      <button class="card click" onclick="go('recharges')"><b>طلبات الشحن</b><div class="muted">قبول ورفض</div></button>
+      <button class="card click" onclick="go('support')"><b>الدعم</b><div class="muted">محادثات المستخدمين</div></button>
+      <button class="card click" onclick="go('announcements')"><b>الإعلانات</b><div class="muted">إشعارات داخلية</div></button>
+      <button class="card click" onclick="go('logs')"><b>سجل النشاط</b><div class="muted">عمليات الإدارة</div></button>
+      <button class="card click" onclick="go('settings')"><b>الإعدادات</b><div class="muted">النظام والإحالة</div></button>
+    </div>
+  </section>
+
+  <section id="p-cats" class="page">
+    <div class="row title"><span>الأقسام</span><button class="btn primary" onclick="catForm()">إضافة قسم</button></div>
+    <div id="cats" class="list"></div>
+  </section>
+
+  <section id="p-providers" class="page">
+    <div class="row title"><span>المزودون</span><button class="btn primary" onclick="providerForm()">إضافة مزود</button></div>
+    <div id="providers" class="list"></div>
+  </section>
+
+  <section id="p-coupons" class="page">
+    <div class="row title"><span>الكوبونات</span><button class="btn primary" onclick="couponForm()">إنشاء كوبون</button></div>
+    <div id="coupons" class="list"></div>
+  </section>
+
+  <section id="p-payments" class="page">
+    <div class="row title"><span>طرق الدفع</span><button class="btn primary" onclick="paymentForm()">إضافة طريقة</button></div>
+    <div id="payments" class="list"></div>
+  </section>
+
+  <section id="p-recharges" class="page">
+    <div class="title">طلبات شحن الرصيد</div>
+    <div id="recharges" class="list"></div>
+  </section>
+
+  <section id="p-support" class="page">
+    <div class="title">الدعم الفني</div>
+    <div class="two-col">
+      <div><input id="chatSearch" class="input" placeholder="بحث" oninput="renderChats()"><div id="chats" class="list"></div></div>
+      <div id="chatbox" class="hide">
+        <div class="card">
+          <div class="row"><b id="chatTitle">المحادثة</b><button class="btn ghost" onclick="closeTicket()">إغلاق التذكرة</button></div>
+          <div id="chat" class="chat"></div>
+          <textarea id="internalNote" class="textarea" placeholder="ملاحظة داخلية لا يراها المستخدم"></textarea>
+          <button class="btn ghost" onclick="saveInternalNote()">حفظ الملاحظة</button>
+          <div class="row"><input id="reply" class="input" maxlength="700" placeholder="الرد"><button class="btn primary" onclick="sendReply()">إرسال</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="p-announcements" class="page">
+    <div class="row title"><span>الإعلانات</span><button class="btn primary" onclick="announcementForm()">إضافة إعلان</button></div>
+    <div id="announcements" class="list"></div>
+  </section>
+
+  <section id="p-logs" class="page">
+    <div class="title">سجل نشاط الإدارة</div>
+    <div id="logs" class="list"></div>
+    <button id="moreLogs" class="btn ghost" style="width:100%" onclick="loadMoreLogs()">تحميل المزيد</button>
+  </section>
+
+  <section id="p-settings" class="page">
+    <div class="card">
+      <b>إعدادات النظام</b>
+      <div class="field"><label>نسبة عمولة الإحالة %</label><input id="aff" class="input" type="number" min="0" max="100" step=".1"></div>
+      <label class="row start" style="margin:12px 0"><input id="ordersEnabled" type="checkbox"> السماح بإنشاء طلبات جديدة</label>
+      <label class="row start" style="margin:12px 0"><input id="maintenanceMode" type="checkbox"> وضع الصيانة</label>
+      <button class="btn primary" onclick="saveSettings()">حفظ الإعدادات</button>
+    </div>
+    <div class="card">
+      <b>الإصدار</b>
+      <div class="row"><span>Admin APK</span><b>2.0.0</b></div>
+      <div class="row"><span>Firebase</span><code>kaido-follow-b597e</code></div>
+      <div class="row"><span>Owner</span><code>kaidofollow@gmail.com</code></div>
+    </div>
+  </section>
+
+  <nav class="nav">
+    <button class="active" data-p="dashboard" onclick="go('dashboard')"><svg viewBox="0 0 24 24"><path d="M4 13h6V4H4v9Zm10 7h6V11h-6v9ZM4 20h6v-3H4v3Zm10-13h6V4h-6v3Z"/></svg><span>الرئيسية</span></button>
+    <button data-p="orders" onclick="go('orders')"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z"/><path d="M9 8h6M9 12h6"/></svg><span>الطلبات</span></button>
+    <button data-p="services" onclick="go('services')"><svg viewBox="0 0 24 24"><path d="m12 2 3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1 3-6Z"/></svg><span>الخدمات</span></button>
+    <button data-p="users" onclick="go('users')"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M17 4a4 4 0 0 1 0 8M17 15a6 6 0 0 1 5 6"/></svg><span>المستخدمون</span></button>
+    <button data-p="more" onclick="go('more')"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg><span>المزيد</span></button>
+  </nav>
+</div>
+
+<div id="formM" class="modal"><div class="sheet"><div class="sheet-handle"></div><div class="row"><h3 id="formTitle">نموذج</h3><button class="btn ghost" onclick="closeM('formM')">إغلاق</button></div><div id="formBody"></div></div></div>
+<div id="detailM" class="modal"><div class="sheet"><div class="sheet-handle"></div><div class="row"><h3 id="detailTitle">التفاصيل</h3><button class="btn ghost" onclick="closeM('detailM')">إغلاق</button></div><div id="detailBody"></div></div></div>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>
