@@ -1,11 +1,217 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Kaido Follow</title><link rel="stylesheet" href="../common.css"></head><body><div id="toast" class="toast"></div><div id="loader" class="loader"><div class="spin"></div></div>
-<section id="auth" class="login"><div class="loginbox"><h2>KAIDO FOLLOW</h2><p class="muted">نسخة المستخدم</p><div id="login"><input id="le" class="input" placeholder="البريد"><input id="lp" class="input" type="password" placeholder="كلمة المرور"><button class="btn primary" onclick="login()">دخول</button><button class="btn" onclick="authMode(1)">إنشاء حساب</button><button class="btn" onclick="resetPass()">نسيت كلمة المرور</button></div><div id="reg" class="hide"><input id="rn" class="input" placeholder="الاسم"><input id="ru" class="input" placeholder="اسم المستخدم"><input id="re" class="input" placeholder="البريد"><input id="rp" class="input" type="password" placeholder="كلمة المرور"><input id="rr" class="input" placeholder="كود دعوة اختياري"><button class="btn primary" onclick="register()">إنشاء</button><button class="btn" onclick="authMode(0)">رجوع</button></div></div></section>
-<div id="app" class="app hide"><header class="top"><div><div class="brand">KAIDO FOLLOW</div><div id="who" class="muted"></div></div><button class="btn" onclick="openM('notiM');readNoti()">الإشعارات</button></header>
-<section id="p-home" class="page active"><div class="card"><div class="muted">الرصيد</div><div id="bal" class="balance">$0</div><div class="row"><span class="muted">المنفق <b id="spent">$0</b></span><button class="btn primary" onclick="go('wallet')">شحن</button></div></div><div id="announce" class="card hide"></div><div class="title">الأقسام</div><input id="catq" class="input" placeholder="بحث" oninput="renderCats()"><div id="cats" class="grid"></div></section>
-<section id="p-orders" class="page"><div class="title">طلباتي</div><input id="oq" class="input" placeholder="بحث" oninput="renderOrders()"><div id="orders" class="list"></div></section>
-<section id="p-wallet" class="page"><div class="card"><div class="muted">الرصيد الحالي</div><div id="wbal" class="balance">$0</div></div><div class="card"><b>شحن بكوبون</b><input id="coupon" class="input" placeholder="CODE"><button class="btn primary" onclick="redeem()">تفعيل</button></div><div class="card"><b>الإحالة</b><div class="row"><code id="refcode">-</code><button class="btn" onclick="copyRef()">نسخ</button></div><div class="row"><span>المدعوون <b id="refcount">0</b></span><span>الأرباح <b id="refearn">$0</b></span></div><button class="btn primary" onclick="transferRef()">تحويل الأرباح</button></div><div class="title">الحركات</div><div id="tx" class="list"></div></section>
-<section id="p-support" class="page"><div class="title">الدعم</div><div id="chat" class="card chat"></div><div class="row"><input id="msg" class="input" placeholder="اكتب رسالتك"><button class="btn primary" onclick="sendMsg()">إرسال</button></div></section>
-<section id="p-profile" class="page"><div class="card"><h3 id="pname"></h3><div id="pemail" class="muted"></div><input id="ename" class="input" placeholder="الاسم"><input id="euser" class="input" placeholder="اسم المستخدم"><button class="btn primary" onclick="saveProfile()">حفظ</button><button class="btn danger" onclick="logout()">تسجيل الخروج</button></div></section>
-<nav class="nav"><button class="active" data-p="home" onclick="go('home')">الخدمات</button><button data-p="orders" onclick="go('orders')">الطلبات</button><button data-p="wallet" onclick="go('wallet')">المحفظة</button><button data-p="support" onclick="go('support')">الدعم</button><button data-p="profile" onclick="go('profile')">حسابي</button></nav></div>
-<div id="servicesM" class="modal"><div class="sheet"><div class="row"><h3 id="stitle">الخدمات</h3><button class="btn" onclick="closeM('servicesM')">إغلاق</button></div><div id="services" class="list"></div></div></div><div id="orderM" class="modal"><div class="sheet"><div class="row"><h3>طلب جديد</h3><button class="btn" onclick="closeM('orderM')">إغلاق</button></div><div id="ssum" class="card"></div><input id="olink" class="input" placeholder="https://..."><input id="oqty" class="input" type="number" placeholder="الكمية" oninput="calc()"><div class="card row"><span>الإجمالي</span><b id="total">$0</b></div><button id="submit" class="btn primary" onclick="submitOrder()">تأكيد الطلب</button></div></div><div id="notiM" class="modal"><div class="sheet"><div class="row"><h3>الإشعارات</h3><button class="btn" onclick="closeM('notiM')">إغلاق</button></div><div id="notis" class="list"></div></div></div>
-<script type="module" src="./app.js"></script></body></html>
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#070A12">
+  <title>Kaido Follow</title>
+  <link rel="stylesheet" href="../common.css">
+</head>
+<body>
+<div id="offline" class="offline hide">لا يوجد اتصال بالإنترنت</div>
+<div id="toast" class="toast"></div>
+<div id="loader" class="loader"><div class="spin"></div></div>
+
+<section id="auth" class="login">
+  <div class="loginbox">
+    <div class="login-logo">
+      <svg viewBox="0 0 64 64" width="44" height="44" fill="none"><path d="M37 7 15 34h15l-4 23 25-31H36L37 7Z" fill="#fff"/><path d="m36 14-4 18h9l10-6H36Z" fill="#8FE8FF"/></svg>
+    </div>
+    <h1>KAIDO FOLLOW</h1>
+    <p class="subtitle" style="text-align:center">منصة الخدمات الرقمية — نسخة المستخدم</p>
+
+    <div id="login">
+      <div class="field"><label>البريد الإلكتروني</label><input id="le" class="input" type="email" autocomplete="email" placeholder="name@example.com"></div>
+      <div class="field"><label>كلمة المرور</label><input id="lp" class="input" type="password" autocomplete="current-password" placeholder="كلمة المرور"></div>
+      <button class="btn primary" style="width:100%" onclick="login()">تسجيل الدخول</button>
+      <div class="row" style="margin-top:10px">
+        <button class="btn ghost" onclick="authMode(1)">إنشاء حساب</button>
+        <button class="btn ghost" onclick="resetPass()">نسيت كلمة المرور</button>
+      </div>
+    </div>
+
+    <div id="reg" class="hide">
+      <div class="field"><label>الاسم</label><input id="rn" class="input" maxlength="60" placeholder="اسمك"></div>
+      <div class="field"><label>اسم المستخدم</label><input id="ru" class="input" maxlength="24" autocomplete="username" placeholder="username"></div>
+      <div class="field"><label>البريد</label><input id="re" class="input" type="email" autocomplete="email" placeholder="name@example.com"></div>
+      <div class="field"><label>كلمة المرور</label><input id="rp" class="input" type="password" autocomplete="new-password" placeholder="8 أحرف أو أكثر"></div>
+      <div class="field"><label>تأكيد كلمة المرور</label><input id="rp2" class="input" type="password" autocomplete="new-password" placeholder="أعد كتابة كلمة المرور"></div>
+      <div class="field"><label>كود دعوة اختياري</label><input id="rr" class="input" maxlength="32" placeholder="KF-XXXXXXXX"></div>
+      <label class="row start muted" style="margin:10px 2px"><input id="terms" type="checkbox"> أوافق على شروط الاستخدام وسياسة الخصوصية</label>
+      <button class="btn primary" style="width:100%" onclick="register()">إنشاء الحساب</button>
+      <button class="btn ghost" style="width:100%;margin-top:7px" onclick="authMode(0)">الرجوع لتسجيل الدخول</button>
+    </div>
+  </div>
+</section>
+
+<div id="app" class="app hide">
+  <header class="top">
+    <div class="brand-wrap">
+      <div class="brand-mark">
+        <svg viewBox="0 0 64 64" width="27" height="27" fill="none"><path d="M37 7 15 34h15l-4 23 25-31H36L37 7Z" fill="#fff"/></svg>
+      </div>
+      <div><div class="brand">KAIDO FOLLOW</div><div id="who" class="muted">...</div></div>
+    </div>
+    <button class="btn icon" onclick="openNotifications()" aria-label="الإشعارات" style="position:relative">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+      <span id="notiBadge" class="badge danger hide" style="position:absolute;top:-7px;left:-7px;padding:2px 6px">0</span>
+    </button>
+  </header>
+
+  <div id="verifyBox" class="notice warning hide">
+    <b>البريد غير موثق</b>
+    <div class="subtitle">وثّق بريدك قبل إنشاء الطلبات أو استخدام المزايا المالية.</div>
+    <div class="row start" style="margin-top:8px">
+      <button class="btn warning" onclick="resendVerification()">إرسال رابط التوثيق</button>
+      <button class="btn ghost" onclick="refreshVerification()">تحققت الآن</button>
+    </div>
+  </div>
+
+  <section id="p-home" class="page active">
+    <div class="card balance-card">
+      <div class="muted">رصيد المحفظة</div>
+      <div id="bal" class="balance">$0.0000</div>
+      <div class="row">
+        <div><div class="tiny">إجمالي المنفق</div><b id="spent">$0.0000</b></div>
+        <button class="btn primary" onclick="go('wallet')">شحن الرصيد</button>
+      </div>
+    </div>
+
+    <div id="announce" class="notice hide"></div>
+
+    <div class="searchbox">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="globalQ" class="input" placeholder="ابحث عن خدمة أو قسم..." oninput="globalSearch()">
+    </div>
+    <div id="searchResults" class="list hide"></div>
+
+    <div class="row title"><span>الأقسام</span><span id="catCount" class="muted"></span></div>
+    <div id="cats" class="grid"></div>
+
+    <div class="row title"><span>خدمات مقترحة</span><button class="btn ghost" onclick="focusSearch()">بحث</button></div>
+    <div id="popular" class="list"></div>
+
+    <div class="row title"><span>آخر طلب</span><button class="btn ghost" onclick="go('orders')">كل الطلبات</button></div>
+    <div id="lastOrder"></div>
+  </section>
+
+  <section id="p-orders" class="page">
+    <div class="title">طلباتي</div>
+    <div class="searchbox">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="oq" class="input" placeholder="رقم الطلب أو اسم الخدمة" oninput="renderOrders()">
+    </div>
+    <div id="orderTabs" class="tabs">
+      <button class="tab active" data-status="ALL" onclick="setOrderFilter('ALL',this)">الكل</button>
+      <button class="tab" data-status="ACTIVE" onclick="setOrderFilter('ACTIVE',this)">قيد التنفيذ</button>
+      <button class="tab" data-status="COMPLETED" onclick="setOrderFilter('COMPLETED',this)">مكتمل</button>
+      <button class="tab" data-status="ISSUE" onclick="setOrderFilter('ISSUE',this)">مراجعة/ملغي</button>
+    </div>
+    <div id="orders" class="list"></div>
+  </section>
+
+  <section id="p-wallet" class="page">
+    <div class="card balance-card"><div class="muted">الرصيد الحالي</div><div id="wbal" class="balance">$0.0000</div></div>
+
+    <div class="title">شحن المحفظة</div>
+    <div id="paymentMethods" class="grid"></div>
+
+    <div class="card">
+      <b>تفعيل كوبون</b>
+      <div class="subtitle">أدخل كود الشحن ثم سيتم تسجيل العملية في سجل المحفظة.</div>
+      <input id="coupon" class="input" placeholder="CODE">
+      <button class="btn primary" onclick="redeem()">تفعيل الكوبون</button>
+    </div>
+
+    <div class="card">
+      <div class="row"><b>برنامج الإحالة</b><span class="badge info">Referral</span></div>
+      <div class="divider"></div>
+      <div class="row"><code id="refcode">-</code><button class="btn ghost" onclick="copyRef()">نسخ الكود</button></div>
+      <div class="grid" style="margin-top:10px">
+        <div class="metric"><span class="muted">المدعوون</span><b id="refcount">0</b></div>
+        <div class="metric"><span class="muted">الأرباح</span><b id="refearn">$0</b></div>
+      </div>
+      <button class="btn primary" style="width:100%;margin-top:10px" onclick="transferRef()">تحويل الأرباح للمحفظة</button>
+    </div>
+
+    <div class="title">طلبات الشحن</div>
+    <div id="recharges" class="list"></div>
+
+    <div class="title">حركات المحفظة</div>
+    <div id="tx" class="list"></div>
+  </section>
+
+  <section id="p-support" class="page">
+    <div class="title">الدعم الفني</div>
+    <div class="notice">يمكنك إرسال رقم الطلب داخل الرسالة لتسريع معالجة المشكلة.</div>
+    <div id="chat" class="card chat"></div>
+    <div class="row">
+      <input id="msg" class="input" maxlength="700" placeholder="اكتب رسالتك...">
+      <button class="btn primary" onclick="sendMsg()">إرسال</button>
+    </div>
+  </section>
+
+  <section id="p-profile" class="page">
+    <div class="card">
+      <div class="row start">
+        <div class="brand-mark"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></div>
+        <div><h3 id="pname" style="margin:0"></h3><div id="pemail" class="muted"></div><div id="puid" class="tiny"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <b>المعلومات الشخصية</b>
+      <div class="field"><label>الاسم</label><input id="ename" class="input" maxlength="60"></div>
+      <div class="field"><label>اسم المستخدم</label><input id="euser" class="input" maxlength="24"></div>
+      <button class="btn primary" onclick="saveProfile()">حفظ التغييرات</button>
+    </div>
+
+    <div class="card">
+      <b>الأمان</b>
+      <div class="subtitle" id="verifyState">حالة البريد</div>
+      <div class="row start" style="margin-top:8px">
+        <button class="btn ghost" onclick="resetCurrentPassword()">إرسال رابط تغيير كلمة المرور</button>
+        <button class="btn ghost" onclick="refreshVerification()">تحديث حالة التوثيق</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row"><span>إصدار التطبيق</span><b>2.0.0</b></div>
+      <div class="row" style="margin-top:9px"><span>معرف الحساب</span><code id="accountId">-</code></div>
+    </div>
+
+    <button class="btn danger" style="width:100%" onclick="logout()">تسجيل الخروج</button>
+  </section>
+
+  <nav class="nav">
+    <button class="active" data-p="home" onclick="go('home')">
+      <svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg><span>الرئيسية</span>
+    </button>
+    <button data-p="orders" onclick="go('orders')">
+      <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z"/><path d="M9 8h6M9 12h6"/></svg><span>طلباتي</span>
+    </button>
+    <button data-p="wallet" onclick="go('wallet')">
+      <svg viewBox="0 0 24 24"><path d="M3 6h16a2 2 0 0 1 2 2v10H5a2 2 0 0 1-2-2V6Z"/><path d="M3 8V5a2 2 0 0 1 2-2h13"/><path d="M16 12h5"/></svg><span>المحفظة</span>
+    </button>
+    <button data-p="support" onclick="go('support')">
+      <svg viewBox="0 0 24 24"><path d="M4 13v-2a8 8 0 0 1 16 0v2"/><path d="M4 13H2v5h4v-5H4Zm16 0h2v5h-4v-5h2Z"/><path d="M18 18c0 2-2 3-5 3"/></svg><span>الدعم</span>
+    </button>
+    <button data-p="profile" onclick="go('profile')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>حسابي</span>
+    </button>
+  </nav>
+</div>
+
+<div id="servicesM" class="modal"><div class="sheet"><div class="sheet-handle"></div><div class="row"><h3 id="stitle">الخدمات</h3><button class="btn ghost" onclick="closeM('servicesM')">إغلاق</button></div><div id="services" class="list"></div></div></div>
+
+<div id="orderM" class="modal"><div class="sheet"><div class="sheet-handle"></div><div class="row"><h3>طلب جديد</h3><button class="btn ghost" onclick="closeM('orderM')">إغلاق</button></div><div id="ssum" class="card"></div><div class="field"><label>الرابط</label><input id="olink" class="input" placeholder="https://..."></div><div class="field"><label>الكمية</label><input id="oqty" class="input" type="number" inputmode="numeric" placeholder="الكمية" oninput="calc()"></div><div class="card row"><span>الإجمالي</span><b id="total" class="ok">$0.0000</b></div><button id="submit" class="btn primary" style="width:100%" onclick="submitOrder()">تأكيد الطلب</button></div></div>
+
+<div id="orderDetailM" class="modal"><div class="sheet"><div class="sheet-handle"></div><div class="row"><h3>تفاصيل الطلب</h3><button class="btn ghost" onclick="closeM('orderDetailM')">إغلاق</button></div><div id="orderDetail"></div></div></div>
+
+<div id="notiM" class="modal"><div class="sheet"><div class="sheet-handle"></div><div class="row"><h3>الإشعارات</h3><button class="btn ghost" onclick="closeM('notiM')">إغلاق</button></div><div id="notis" class="list"></div></div></div>
+
+<div id="rechargeM" class="modal"><div class="sheet"><div class="sheet-handle"></div><div class="row"><h3>طلب شحن</h3><button class="btn ghost" onclick="closeM('rechargeM')">إغلاق</button></div><div id="methodInfo" class="card"></div><div class="field"><label>المبلغ</label><input id="rechargeAmount" class="input" type="number" step=".0001"></div><div class="field"><label>رقم العملية / المرجع</label><input id="rechargeRef" class="input" maxlength="120"></div><button class="btn primary" style="width:100%" onclick="submitRecharge()">إرسال طلب الشحن</button></div></div>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>
